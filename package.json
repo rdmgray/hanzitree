@@ -1,0 +1,17 @@
+{
+  "name": "hanzitree",
+  "version": "1.0.0",
+  "description": "Chinese character decomposition viewer",
+  "main": "server.js",
+  "dependencies": {
+    "express": "^4.21.2",
+    "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  },
+  "scripts": {
+    "migrate": "node migrate.js",
+    "start": "node server.js"
+  }
+}
