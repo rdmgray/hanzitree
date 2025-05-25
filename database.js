@@ -1,216 +1,103 @@
-// Mock database for Chinese characters
-const CharacterDatabase = {
-    characters: {
-        '安': {
-            character: '安',
-            unicode: 'U+5B89',
-            radical: '宀 (40)',
-            strokes: 6,
-            hskLevel: 1,
-            decomposition: {
-                primary: {
-                    components: ['宀', '女'],
-                    structure: '⿱',
-                    description: 'Top-Bottom composition',
-                    meanings: ['roof, shelter', 'woman']
-                },
-                semantic: {
-                    description: 'A woman (女) under a roof (宀) represents safety and peace. The character suggests the security found in having shelter and family.',
-                    concepts: ['peace', 'safety', 'security', 'calm']
-                },
-                atomic: {
-                    components: ['宀', '女'],
-                    description: 'Both components are atomic radicals that cannot be further decomposed meaningfully.'
-                }
-            },
-            meanings: ['peace', 'safe', 'secure', 'calm', 'quiet'],
-            pronunciation: {
-                pinyin: 'ān',
-                tone: 1
-            }
-        },
-        '宀': {
-            character: '宀',
-            unicode: 'U+5B80',
-            radical: '宀 (40)',
-            strokes: 3,
-            hskLevel: null,
-            decomposition: {
-                primary: {
-                    components: ['宀'],
-                    structure: 'atomic',
-                    description: 'Atomic radical - roof/shelter',
-                    meanings: ['roof', 'shelter', 'house']
-                }
-            },
-            meanings: ['roof', 'shelter', 'house', 'dwelling'],
-            pronunciation: {
-                pinyin: 'mián',
-                tone: 2
-            }
-        },
-        '女': {
-            character: '女',
-            unicode: 'U+5973',
-            radical: '女 (38)',
-            strokes: 3,
-            hskLevel: 1,
-            decomposition: {
-                primary: {
-                    components: ['女'],
-                    structure: 'atomic',
-                    description: 'Atomic radical - woman',
-                    meanings: ['woman', 'female']
-                }
-            },
-            meanings: ['woman', 'female', 'girl'],
-            pronunciation: {
-                pinyin: 'nǚ',
-                tone: 3
-            }
-        },
-        '木': {
-            character: '木',
-            unicode: 'U+6728',
-            radical: '木 (75)',
-            strokes: 4,
-            hskLevel: 1,
-            decomposition: {
-                primary: {
-                    components: ['木'],
-                    structure: 'atomic',
-                    description: 'Atomic radical - tree/wood',
-                    meanings: ['tree', 'wood']
-                }
-            },
-            meanings: ['tree', 'wood', 'timber'],
-            pronunciation: {
-                pinyin: 'mù',
-                tone: 4
-            }
-        },
-        '林': {
-            character: '林',
-            unicode: 'U+6797',
-            radical: '木 (75)',
-            strokes: 8,
-            hskLevel: 2,
-            decomposition: {
-                primary: {
-                    components: ['木', '木'],
-                    structure: '⿰',
-                    description: 'Left-Right composition',
-                    meanings: ['tree', 'tree']
-                },
-                semantic: {
-                    description: 'Two trees (木木) together represent a forest or grove.',
-                    concepts: ['forest', 'grove', 'woods', 'many trees']
-                },
-                atomic: {
-                    components: ['木', '木'],
-                    description: 'Composed of two identical tree radicals.'
-                }
-            },
-            meanings: ['forest', 'grove', 'woods'],
-            pronunciation: {
-                pinyin: 'lín',
-                tone: 2
-            }
-        },
-        '森': {
-            character: '森',
-            unicode: 'U+68EE',
-            radical: '木 (75)',
-            strokes: 12,
-            hskLevel: 2,
-            decomposition: {
-                primary: {
-                    components: ['林', '木'],
-                    structure: '⿱',
-                    description: 'Top-Bottom composition',
-                    meanings: ['forest', 'tree']
-                },
-                secondary: {
-                    components: ['木', '木', '木'],
-                    structure: 'triple',
-                    description: 'Three trees stacked',
-                    meanings: ['tree', 'tree', 'tree']
-                },
-                semantic: {
-                    description: 'Three trees (木木木) represent a dense forest, emphasizing abundance and density.',
-                    concepts: ['dense forest', 'jungle', 'wilderness', 'abundance of trees']
-                },
-                atomic: {
-                    components: ['木', '木', '木'],
-                    description: 'Composed of three tree radicals arranged in a triangular pattern.'
-                }
-            },
-            meanings: ['dense forest', 'jungle', 'wilderness'],
-            pronunciation: {
-                pinyin: 'sēn',
-                tone: 1
-            }
-        }
-    },
+const sqlite3 = require('better-sqlite3');
+const path = require('path');
 
-    // Get character data by character
-    getCharacter(char) {
-        return this.characters[char] || null;
-    },
-
-    // Get random character
-    getRandomCharacter() {
-        const chars = Object.keys(this.characters);
-        const randomIndex = Math.floor(Math.random() * chars.length);
-        const randomChar = chars[randomIndex];
-        return this.characters[randomChar];
-    },
-
-    // Check if character exists
-    hasCharacter(char) {
-        return char in this.characters;
-    },
-
-    // Get all characters (for search/browse)
-    getAllCharacters() {
-        return Object.values(this.characters);
-    },
-
-    // Search characters by meaning or pronunciation
-    searchCharacters(query) {
-        query = query.toLowerCase();
-        return Object.values(this.characters).filter(char => {
-            return char.meanings.some(meaning => meaning.includes(query)) ||
-                   char.pronunciation.pinyin.includes(query) ||
-                   char.character.includes(query);
-        });
-    }
-};
-
-// Simulate async database operations
-const DatabaseAPI = {
-    async loadCharacter(character) {
-        // Simulate network delay
-        await this.delay(300 + Math.random() * 500);
+class Database {
+    constructor() {
+        this.db = new sqlite3(path.join(__dirname, 'hanzi.db'));
         
-        const data = CharacterDatabase.getCharacter(character);
-        if (!data) {
-            throw new Error(`Character '${character}' not found`);
+        // Prepare statements
+        this.getCharacterStmt = this.db.prepare('SELECT * FROM characters WHERE character = ?');
+        this.searchCharactersStmt = this.db.prepare(`
+            SELECT * FROM characters 
+            WHERE character LIKE ? 
+            OR unicode LIKE ? 
+            OR structure_type LIKE ?
+            LIMIT 50
+        `);
+        this.randomCharacterStmt = this.db.prepare('SELECT * FROM characters ORDER BY RANDOM() LIMIT 1');
+    }
+
+    _formatCharacterData(row) {
+        if (!row) return null;
+        
+        return {
+            character: row.character,
+            unicode: row.unicode,
+            radical: row.radical,
+            strokes: row.stroke_count,
+            decomposition: {
+                primary: {
+                    components: JSON.parse(row.direct_components),
+                    structure: row.ids_sequence,
+                    description: row.structure_type,
+                }
+            }
+        };
+    }
+}
+
+// Browser-compatible database implementation
+window.DatabaseAPI = {
+    async loadCharacter(character) {
+        try {
+            console.log('Fetching character:', character);
+            const response = await fetch(`/api/character/${encodeURIComponent(character)}`);
+            console.log('Response status:', response.status);
+            const text = await response.text();
+            console.log('Raw response:', text);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}, response: ${text}`);
+            }
+            
+            const data = JSON.parse(text);
+            console.log('Parsed character data:', data);
+            return data;
+        } catch (error) {
+            console.error('Error fetching character:', error);
+            throw error;
         }
-        return data;
     },
 
     async loadRandomCharacter() {
-        await this.delay(200 + Math.random() * 300);
-        return CharacterDatabase.getRandomCharacter();
+        try {
+            console.log('Fetching random character');
+            const response = await fetch('/api/character/random');
+            console.log('Random character response status:', response.status);
+            const text = await response.text();
+            console.log('Raw response:', text);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}, response: ${text}`);
+            }
+            
+            const data = JSON.parse(text);
+            console.log('Parsed random character data:', data);
+            return data;
+        } catch (error) {
+            console.error('Error fetching random character:', error);
+            throw error;
+        }
     },
 
     async searchCharacters(query) {
-        await this.delay(100 + Math.random() * 200);
-        return CharacterDatabase.searchCharacters(query);
-    },
-
-    delay(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
+        try {
+            console.log('Searching for:', query);
+            const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+            console.log('Search response status:', response.status);
+            const text = await response.text();
+            console.log('Raw response:', text);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}, response: ${text}`);
+            }
+            
+            const data = JSON.parse(text);
+            console.log('Parsed search results:', data);
+            return data;
+        } catch (error) {
+            console.error('Error searching characters:', error);
+            throw error;
+        }
     }
 };

@@ -1,6 +1,10 @@
 // Main application class
 class HanziTreeApp {
     constructor() {
+        if (!window.DatabaseAPI) {
+            throw new Error('DatabaseAPI not loaded. Make sure database.js is loaded before app.js');
+        }
+        
         this.currentCharacter = null;
         this.loadingOverlay = document.getElementById('loading-overlay');
         this.mainCharacterEl = document.getElementById('main-character');
@@ -54,7 +58,14 @@ class HanziTreeApp {
         try {
             this.showLoading(true);
             
+            console.log('Loading character:', character);
             const data = await DatabaseAPI.loadCharacter(character);
+            console.log('Received data:', data);
+            
+            if (!data) {
+                throw new Error(`No data returned for character: ${character}`);
+            }
+            
             this.currentCharacter = data;
             this.renderCharacter(data);
             
@@ -65,7 +76,8 @@ class HanziTreeApp {
             }
             
         } catch (error) {
-            console.error('Error loading character:', error);
+            console.error('Detailed error loading character:', error);
+            console.error('Error stack:', error.stack);
             this.showError('Failed to load character data');
         } finally {
             this.showLoading(false);
@@ -75,13 +87,21 @@ class HanziTreeApp {
     async loadRandomCharacter() {
         try {
             this.showLoading(true);
+            console.log('Requesting random character');
             
             const data = await DatabaseAPI.loadRandomCharacter();
+            console.log('Received random character data:', data);
+            
+            if (!data || !data.character) {
+                throw new Error('Invalid character data received');
+            }
+            
             this.currentCharacter = data;
             this.renderCharacter(data);
             
         } catch (error) {
-            console.error('Error loading random character:', error);
+            console.error('Detailed error loading random character:', error);
+            console.error('Error stack:', error.stack);
             this.showError('Failed to load random character');
         } finally {
             this.showLoading(false);
@@ -89,6 +109,14 @@ class HanziTreeApp {
     }
 
     renderCharacter(data) {
+        console.log('Rendering character data:', data);
+        
+        if (!data || !data.character) {
+            console.error('Invalid character data:', data);
+            this.showError('Invalid character data');
+            return;
+        }
+        
         // Render main character
         this.mainCharacterEl.textContent = data.character;
         this.mainCharacterEl.classList.add('fade-in');
@@ -106,10 +134,9 @@ class HanziTreeApp {
     renderCharacterMeta(data) {
         const metaItems = [
             data.unicode,
-            `Radical: ${data.radical}`,
-            `${data.strokes} strokes`,
-            data.hskLevel ? `HSK Level ${data.hskLevel}` : 'Not in HSK'
-        ];
+            data.radical ? `Radical: ${data.radical}` : '',
+            data.strokes ? `${data.strokes} strokes` : ''
+        ].filter(Boolean);  // Remove empty strings
 
         this.characterMetaEl.innerHTML = metaItems
             .map(item => `<div class="meta-item">${item}</div>`)
@@ -122,43 +149,13 @@ class HanziTreeApp {
         const decomp = data.decomposition;
         let html = '';
 
-        // Primary structure
+        // Primary structure only
         if (decomp.primary) {
             html += this.createDecompLevel(
-                'Primary Structure',
+                'Character Structure',
                 decomp.primary.components,
                 decomp.primary.structure,
-                decomp.primary.description,
-                decomp.primary.meanings
-            );
-        }
-
-        // Secondary structure (if exists)
-        if (decomp.secondary) {
-            html += this.createDecompLevel(
-                'Secondary Structure',
-                decomp.secondary.components,
-                decomp.secondary.structure,
-                decomp.secondary.description,
-                decomp.secondary.meanings
-            );
-        }
-
-        // Semantic analysis
-        if (decomp.semantic) {
-            html += this.createSemanticLevel(
-                'Semantic Analysis',
-                decomp.semantic.description,
-                decomp.semantic.concepts
-            );
-        }
-
-        // Atomic components
-        if (decomp.atomic) {
-            html += this.createAtomicLevel(
-                'Atomic Components',
-                decomp.atomic.components,
-                decomp.atomic.description
+                decomp.primary.description
             );
         }
 
@@ -169,40 +166,14 @@ class HanziTreeApp {
         this.setupComponentClickHandlers();
     }
 
-    createDecompLevel(label, components, structure, description, meanings) {
+    createDecompLevel(label, components, structure, description) {
         const formula = this.createDecompFormula(components, this.currentCharacter.character);
-        const meaningTags = meanings ? meanings.map(m => `<div class="meaning-tag">${m}</div>`).join('') : '';
         
         return `
             <div class="decomp-level">
                 <div class="level-label">${label}</div>
                 <div class="decomp-formula">${formula}</div>
                 <div class="structure-info">${structure} - ${description}</div>
-                <div class="component-meanings">${meaningTags}</div>
-            </div>
-        `;
-    }
-
-    createSemanticLevel(label, description, concepts) {
-        const conceptTags = concepts.map(c => `<div class="meaning-tag">${c}</div>`).join('');
-        
-        return `
-            <div class="decomp-level">
-                <div class="level-label">${label}</div>
-                <div class="structure-info">${description}</div>
-                <div class="component-meanings">${conceptTags}</div>
-            </div>
-        `;
-    }
-
-    createAtomicLevel(label, components, description) {
-        const componentHtml = components.map(c => `<div class="component" data-char="${c}">${c}</div>`).join('');
-        
-        return `
-            <div class="decomp-level">
-                <div class="level-label">${label}</div>
-                <div class="decomp-formula">${componentHtml}</div>
-                <div class="structure-info">${description}</div>
             </div>
         `;
     }
@@ -271,7 +242,7 @@ class HanziTreeApp {
 
     showSearchResults(results) {
         const resultList = results.map(r => 
-            `${r.character} (${r.pronunciation.pinyin}) - ${r.meanings.slice(0, 3).join(', ')}`
+            `${r.character} - ${r.unicode}`
         ).join('\n');
         
         const selection = prompt(`Multiple results found:\n\n${resultList}\n\nEnter the character you want to view:`);
