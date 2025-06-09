@@ -189,6 +189,39 @@ class HanziTree {
             // Add click handlers for components
             this.setupComponentClickHandlers();
         }
+
+        // Show all components if they exist
+        if (data.all_components) {
+            try {
+                // Parse the Python list string into an array
+                // Remove the square brackets and split by comma
+                const componentsStr = data.all_components.slice(1, -1); // Remove [ and ]
+                const allComponents = componentsStr
+                    .split(',')
+                    .map(c => c.trim().replace(/['"]/g, '')) // Remove quotes and trim
+                    .filter(c => c); // Remove empty strings
+
+                if (allComponents.length > 0) {
+                    const allComponentsSection = document.createElement('div');
+                    allComponentsSection.className = 'decomp-level';
+                    allComponentsSection.innerHTML = `
+                        <div class="level-label">All Components</div>
+                        <div class="components-list">
+                            ${allComponents.map(char => 
+                                `<span class="component" data-char="${char}">${char}</span>`
+                            ).join('')}
+                        </div>
+                    `;
+                    
+                    decompLevelsEl.appendChild(allComponentsSection);
+                    
+                    // Add click handlers for all components
+                    this.setupComponentClickHandlers();
+                }
+            } catch (error) {
+                console.error('Error parsing all_components:', error);
+            }
+        }
     }
 }
 
