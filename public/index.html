@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HanziTree - Chinese Character Explorer</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-    <header class="header">
+    <div class="header">
         <div class="header-content">
             <div class="logo">
                 <div class="logo-icon">木</div>
@@ -20,34 +20,27 @@
                 <button class="header-btn" data-action="settings">Settings</button>
             </div>
         </div>
-    </header>
-
-    <main class="main-container">
-        <section class="character-section">
-            <div class="character-display">
-                <div class="main-character" id="main-character">Loading...</div>
-                <div class="character-meta" id="character-meta">
-                    <!-- Meta information will be loaded dynamically -->
-                </div>
-            </div>
-
-            <div class="decomposition-section">
-                <h2 class="section-title">Decomposition</h2>
-                
-                <div class="decomp-levels" id="decomp-levels">
-                    <!-- Decomposition levels will be loaded dynamically -->
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <!-- Loading indicator -->
-    <div class="loading-overlay" id="loading-overlay" style="display: none;">
-        <div class="loading-spinner"></div>
-        <div class="loading-text">Loading character...</div>
     </div>
 
-    <script src="database.js"></script>
-    <script src="app.js"></script>
+    <div class="main-container">
+        <div class="character-section">
+            <div class="character-display">
+                <div id="main-character" class="main-character">安</div>
+                <div id="character-meta" class="character-meta"></div>
+            </div>
+            <div class="decomposition-section">
+                <h2 class="section-title">Decomposition</h2>
+                <div id="decomp-levels" class="decomp-levels"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="loading-overlay" class="loading-overlay" style="display: none;">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Loading...</div>
+    </div>
+
+    <script src="js/DatabaseClient.js"></script>
+    <script src="js/HanziTree.js"></script>
 </body>
 </html>

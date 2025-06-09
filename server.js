@@ -27,7 +27,7 @@ app.get('/api/data', (req, res) => {
 });
 
 app.get('/api/data/random', (req, res) => {
-  db.get('SELECT * FROM characters ORDER BY RANDOM() LIMIT 1', (err, results) => {
+  db.get('SELECT * FROM characters WHERE unicode BETWEEN "U+4E00" AND "U+9FFF" ORDER BY RANDOM() LIMIT 1', (err, results) => {
     if (err) {
       res.status(500).json({ error: err.message });
       return;
@@ -45,6 +45,26 @@ app.get('/api/data/character/:character', (req, res) => {
     }
     res.json(results);
   });
+});
+
+// API endpoint to get character by unicode
+app.get('/api/data/unicode/:unicode', (req, res) => {
+    const unicode = req.params.unicode;
+    
+    db.get('SELECT * FROM characters WHERE unicode = ?', [unicode], (err, row) => {
+        if (err) {
+            console.error('Database error:', err);
+            res.status(500).json({ error: 'Database error' });
+            return;
+        }
+        
+        if (!row) {
+            res.status(404).json({ error: 'Character not found' });
+            return;
+        }
+        
+        res.json(row);
+    });
 });
 
 // Close database connection on exit

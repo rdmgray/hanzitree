@@ -1,5 +1,5 @@
 // Main application class
-class HanziTreeApp {
+class HanziTree {
     constructor() {
         this.currentCharacter = null;
         this.loadingOverlay = document.getElementById('loading-overlay');
@@ -53,14 +53,14 @@ class HanziTreeApp {
         try {
             this.showLoading(true);
             
-            const data = await DatabaseAPI.loadCharacter(character);
+            const data = await DatabaseClient.loadCharacter(character);
             this.currentCharacter = data;
             this.renderCharacter(data);
             
             // Update URL without page reload
             if (history.pushState) {
-                const newUrl = `${window.location.pathname}?char=${encodeURIComponent(character)}`;
-                history.pushState({ character }, '', newUrl);
+                const newUrl = `${window.location.pathname}?unicode=${encodeURIComponent(data.unicode)}`;
+                history.pushState({ unicode: data.unicode }, '', newUrl);
             }
             
         } catch (error) {
@@ -75,9 +75,15 @@ class HanziTreeApp {
         try {
             this.showLoading(true);
             
-            const data = await DatabaseAPI.loadRandomCharacter();
+            const data = await DatabaseClient.loadRandomCharacter();
             this.currentCharacter = data;
             this.renderCharacter(data);
+            
+            // Update URL without page reload
+            if (history.pushState) {
+                const newUrl = `${window.location.pathname}?unicode=${encodeURIComponent(data.unicode)}`;
+                history.pushState({ unicode: data.unicode }, '', newUrl);
+            }
             
         } catch (error) {
             console.error('Error loading random character:', error);
@@ -145,8 +151,17 @@ class HanziTreeApp {
 
     // Handle browser back/forward
     handlePopState(event) {
-        if (event.state && event.state.character) {
-            this.loadCharacter(event.state.character);
+        if (event.state && event.state.unicode) {
+            // Find the character for this unicode value
+            DatabaseClient.loadCharacterByUnicode(event.state.unicode)
+                .then(data => {
+                    this.currentCharacter = data;
+                    this.renderCharacter(data);
+                })
+                .catch(error => {
+                    console.error('Error loading character by unicode:', error);
+                    this.showError('Failed to load character data');
+                });
         }
     }
 
@@ -179,18 +194,26 @@ class HanziTreeApp {
 
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    const app = new HanziTreeApp();
+    const app = new HanziTree();
     
     // Handle browser navigation
     window.addEventListener('popstate', (event) => {
         app.handlePopState(event);
     });
     
-    // Check URL for initial character
+    // Check URL for initial unicode
     const urlParams = new URLSearchParams(window.location.search);
-    const charParam = urlParams.get('char');
-    if (charParam && charParam !== '安') {
-        app.loadCharacter(charParam);
+    const unicodeParam = urlParams.get('unicode');
+    if (unicodeParam) {
+        DatabaseClient.loadCharacterByUnicode(unicodeParam)
+            .then(data => {
+                app.currentCharacter = data;
+                app.renderCharacter(data);
+            })
+            .catch(error => {
+                console.error('Error loading initial character:', error);
+                app.showError('Failed to load character data');
+            });
     }
 });
 
