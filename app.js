@@ -1,15 +1,10 @@
 // Main application class
 class HanziTreeApp {
     constructor() {
-        if (!window.DatabaseAPI) {
-            throw new Error('DatabaseAPI not loaded. Make sure database.js is loaded before app.js');
-        }
-        
         this.currentCharacter = null;
         this.loadingOverlay = document.getElementById('loading-overlay');
         this.mainCharacterEl = document.getElementById('main-character');
         this.characterMetaEl = document.getElementById('character-meta');
-        this.decompLevelsEl = document.getElementById('decomp-levels');
         
         this.init();
     }
@@ -58,14 +53,7 @@ class HanziTreeApp {
         try {
             this.showLoading(true);
             
-            console.log('Loading character:', character);
             const data = await DatabaseAPI.loadCharacter(character);
-            console.log('Received data:', data);
-            
-            if (!data) {
-                throw new Error(`No data returned for character: ${character}`);
-            }
-            
             this.currentCharacter = data;
             this.renderCharacter(data);
             
@@ -76,8 +64,7 @@ class HanziTreeApp {
             }
             
         } catch (error) {
-            console.error('Detailed error loading character:', error);
-            console.error('Error stack:', error.stack);
+            console.error('Error loading character:', error);
             this.showError('Failed to load character data');
         } finally {
             this.showLoading(false);
@@ -87,21 +74,13 @@ class HanziTreeApp {
     async loadRandomCharacter() {
         try {
             this.showLoading(true);
-            console.log('Requesting random character');
             
             const data = await DatabaseAPI.loadRandomCharacter();
-            console.log('Received random character data:', data);
-            
-            if (!data || !data.character) {
-                throw new Error('Invalid character data received');
-            }
-            
             this.currentCharacter = data;
             this.renderCharacter(data);
             
         } catch (error) {
-            console.error('Detailed error loading random character:', error);
-            console.error('Error stack:', error.stack);
+            console.error('Error loading random character:', error);
             this.showError('Failed to load random character');
         } finally {
             this.showLoading(false);
@@ -109,24 +88,13 @@ class HanziTreeApp {
     }
 
     renderCharacter(data) {
-        console.log('Rendering character data:', data);
-        
-        if (!data || !data.character) {
-            console.error('Invalid character data:', data);
-            this.showError('Invalid character data');
-            return;
-        }
-        
         // Render main character
         this.mainCharacterEl.textContent = data.character;
         this.mainCharacterEl.classList.add('fade-in');
         
         // Render meta information
         this.renderCharacterMeta(data);
-        
-        // Render decomposition
-        this.renderDecomposition(data);
-        
+                
         // Update page title
         document.title = `${data.character} - HanziTree`;
     }
@@ -134,66 +102,14 @@ class HanziTreeApp {
     renderCharacterMeta(data) {
         const metaItems = [
             data.unicode,
-            data.radical ? `Radical: ${data.radical}` : '',
-            data.strokes ? `${data.strokes} strokes` : ''
-        ].filter(Boolean);  // Remove empty strings
+            `Structure: ${data.structure}`
+        ];
 
         this.characterMetaEl.innerHTML = metaItems
             .map(item => `<div class="meta-item">${item}</div>`)
             .join('');
         
         this.characterMetaEl.classList.add('fade-in');
-    }
-
-    renderDecomposition(data) {
-        const decomp = data.decomposition;
-        let html = '';
-
-        // Primary structure only
-        if (decomp.primary) {
-            html += this.createDecompLevel(
-                'Character Structure',
-                decomp.primary.components,
-                decomp.primary.structure,
-                decomp.primary.description
-            );
-        }
-
-        this.decompLevelsEl.innerHTML = html;
-        this.decompLevelsEl.classList.add('fade-in');
-        
-        // Add click handlers for components
-        this.setupComponentClickHandlers();
-    }
-
-    createDecompLevel(label, components, structure, description) {
-        const formula = this.createDecompFormula(components, this.currentCharacter.character);
-        
-        return `
-            <div class="decomp-level">
-                <div class="level-label">${label}</div>
-                <div class="decomp-formula">${formula}</div>
-                <div class="structure-info">${structure} - ${description}</div>
-            </div>
-        `;
-    }
-
-    createDecompFormula(components, targetChar) {
-        let html = '';
-        
-        components.forEach((component, index) => {
-            html += `<div class="component" data-char="${component}">${component}</div>`;
-            if (index < components.length - 1) {
-                html += '<div class="plus-sign">+</div>';
-            }
-        });
-        
-        if (components.length > 1) {
-            html += '<div class="equals-sign">=</div>';
-            html += `<div class="component" data-char="${targetChar}">${targetChar}</div>`;
-        }
-        
-        return html;
     }
 
     setupComponentClickHandlers() {
@@ -209,52 +125,7 @@ class HanziTreeApp {
     }
 
     showSearchDialog() {
-        const query = prompt('Enter a character, pinyin, or meaning to search:');
-        if (query && query.trim()) {
-            this.performSearch(query.trim());
-        }
-    }
-
-    async performSearch(query) {
-        try {
-            this.showLoading(true);
-            
-            const results = await DatabaseAPI.searchCharacters(query);
-            
-            if (results.length === 0) {
-                alert('No characters found matching your search.');
-                return;
-            }
-            
-            if (results.length === 1) {
-                await this.loadCharacter(results[0].character);
-            } else {
-                this.showSearchResults(results);
-            }
-            
-        } catch (error) {
-            console.error('Search error:', error);
-            this.showError('Search failed');
-        } finally {
-            this.showLoading(false);
-        }
-    }
-
-    showSearchResults(results) {
-        const resultList = results.map(r => 
-            `${r.character} - ${r.unicode}`
-        ).join('\n');
-        
-        const selection = prompt(`Multiple results found:\n\n${resultList}\n\nEnter the character you want to view:`);
-        
-        if (selection && selection.trim()) {
-            const selected = results.find(r => r.character === selection.trim());
-            if (selected) {
-                this.loadCharacter(selected.character);
-            } else {
-                alert('Invalid selection.');
-            }
-        }
+        alert('Search feature coming soon!');
     }
 
     showFavorites() {
