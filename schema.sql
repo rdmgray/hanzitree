@@ -1,11 +1,12 @@
 CREATE TABLE characters (
     character TEXT PRIMARY KEY,
     unicode TEXT,
-    radical TEXT,
-    stroke_count INTEGER,
-    ids_sequence TEXT,
-    structure_type TEXT,
-    direct_components TEXT,  -- Will store JSON array
-    all_components TEXT,     -- Will store JSON array
-    source TEXT
+    decomposition TEXT,
+    atomic BOOLEAN,
+    structure_idc TEXT,
+    structure TEXT,
+    component_1 TEXT,
+    component_2 TEXT,
+    component_3 TEXT,
+    all_components TEXT,     -- Will store list
 ); 
