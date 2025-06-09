@@ -27,7 +27,7 @@ app.get('/api/data', (req, res) => {
 });
 
 app.get('/api/data/random', (req, res) => {
-  db.get('SELECT * FROM characters ORDER BY RAND( ) LIMIT 1', (err, results) => {
+  db.get('SELECT * FROM characters ORDER BY RANDOM() LIMIT 1', (err, results) => {
     if (err) {
       res.status(500).json({ error: err.message });
       return;
