@@ -67,6 +67,28 @@ app.get('/api/data/unicode/:unicode', (req, res) => {
     });
 });
 
+// API endpoint to get right components
+app.get('/api/data/right-components/:character', (req, res) => {
+    const character = req.params.character;
+    
+    db.all(`
+        SELECT * 
+        FROM characters 
+        WHERE component_1 = ? 
+        AND structure = 'left-right' 
+        ORDER BY frequency_score DESC 
+        LIMIT 16
+    `, [character], (err, rows) => {
+        if (err) {
+            console.error('Database error:', err);
+            res.status(500).json({ error: 'Database error' });
+            return;
+        }
+        
+        res.json(rows);
+    });
+});
+
 // Close database connection on exit
 process.on('SIGINT', () => {
   db.close((err) => {

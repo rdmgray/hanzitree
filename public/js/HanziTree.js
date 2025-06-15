@@ -106,8 +106,15 @@ class HanziTree {
         this.mainCharacterEl.textContent = data.character;
         this.mainCharacterEl.classList.add('fade-in');
         
-        // Render meta information
-        this.renderCharacterMeta(data);
+        // Add grow right button if it doesn't exist
+        if (!document.getElementById('grow-right-btn')) {
+            const growRightBtn = document.createElement('button');
+            growRightBtn.id = 'grow-right-btn';
+            growRightBtn.className = 'grow-right-btn';
+            growRightBtn.textContent = 'Grow right';
+            growRightBtn.addEventListener('click', () => this.handleGrowRight(data));
+            this.mainCharacterEl.parentNode.appendChild(growRightBtn);
+        }
         
         // Render character information
         this.renderCharacterInfo(data);
@@ -117,19 +124,6 @@ class HanziTree {
                 
         // Update page title
         document.title = `${data.character} - HanziTree`;
-    }
-
-    renderCharacterMeta(data) {
-        const metaItems = [
-            data.unicode,
-            `Structure: ${data.structure}`
-        ];
-
-        this.characterMetaEl.innerHTML = metaItems
-            .map(item => `<div class="meta-item">${item}</div>`)
-            .join('');
-        
-        this.characterMetaEl.classList.add('fade-in');
     }
 
     renderCharacterInfo(data) {
@@ -269,6 +263,77 @@ class HanziTree {
                 console.error('Error parsing all_components:', error);
             }
         }
+    }
+
+    async handleGrowRight(data) {
+        try {
+            this.showLoading(true);
+            
+            // Query database for right components
+            const results = await DatabaseClient.loadRightComponents(data.character);
+
+            // Replace button with results
+            this.displayGrowRightResults(results);
+            
+        } catch (error) {
+            console.error('Error loading right components:', error);
+            this.showError('Failed to load right components');
+        } finally {
+            this.showLoading(false);
+        }
+    }
+
+    displayGrowRightResults(results) {
+        const growRightBtn = document.getElementById('grow-right-btn');
+        if (!growRightBtn) return;
+
+        const resultsContainer = document.createElement('div');
+        resultsContainer.className = 'grow-right-results';
+        
+        // Create grid of results
+        resultsContainer.innerHTML = `
+            <div class="results-grid">
+                ${results.map(result => `
+                    <div class="result-item">
+                        ${result.component_2}
+                    </div>
+                `).join('')}
+            </div>
+            <button class="back-btn">Back</button>
+        `;
+
+        // Add click handlers for results
+        const resultItems = resultsContainer.querySelectorAll('.result-item');
+        resultItems.forEach((item, index) => {
+            item.addEventListener('click', () => {
+                const result = results[index];
+                if (result && result.character) {
+                    this.loadCharacter(result.character);
+                    this.restoreGrowRightButton();
+                }
+            });
+        });
+
+        // Add click handler for back button
+        resultsContainer.querySelector('.back-btn').addEventListener('click', () => {
+            this.restoreGrowRightButton();
+        });
+
+        // Replace button with results
+        growRightBtn.replaceWith(resultsContainer);
+    }
+
+    restoreGrowRightButton() {
+        const resultsContainer = document.querySelector('.grow-right-results');
+        if (!resultsContainer) return;
+
+        const growRightBtn = document.createElement('button');
+        growRightBtn.id = 'grow-right-btn';
+        growRightBtn.className = 'grow-right-btn';
+        growRightBtn.textContent = 'Grow right';
+        growRightBtn.addEventListener('click', () => this.handleGrowRight(this.currentCharacter));
+
+        resultsContainer.replaceWith(growRightBtn);
     }
 }
 

@@ -23,6 +23,14 @@ const DatabaseClient = {
             throw new Error('Failed to load character by unicode');
         }
         return response.json();
+    },
+
+    async loadRightComponents(character) {
+        const response = await fetch(`/api/data/right-components/${encodeURIComponent(character)}`);
+        if (!response.ok) {
+            throw new Error('Failed to load right components');
+        }
+        return response.json();
     }
 
 };
