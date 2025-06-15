@@ -35,6 +35,15 @@ body {
     display: flex;
     align-items: center;
     gap: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0.5rem;
+    border-radius: 8px;
+}
+
+.logo:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateY(-1px);
 }
 
 .logo h1 {
@@ -138,6 +147,56 @@ body {
     border-radius: 12px;
     font-size: 0.9rem;
     color: #059669;
+    font-weight: 500;
+}
+
+/* Character Information Section */
+.info-section {
+    background: white;
+    padding: 2rem;
+    border-top: 1px solid #e2e8f0;
+    margin-bottom: 1rem;
+}
+
+.info-section .section-title {
+    margin-bottom: 1.5rem;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.info-item {
+    background: #f8fafc;
+    padding: 1rem;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    transition: all 0.2s ease;
+    min-width: 0;
+}
+
+.info-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border-color: #10b981;
+}
+
+.info-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.5rem;
+}
+
+.info-value {
+    font-size: 1.1rem;
+    color: #1e293b;
     font-weight: 500;
 }
 

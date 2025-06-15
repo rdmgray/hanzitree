@@ -11,7 +11,7 @@ class HanziTree {
 
     async init() {
         this.setupEventListeners();
-        await this.loadCharacter('安'); // Load default character
+        await this.loadCharacter('木'); // Load default character
     }
 
     setupEventListeners() {
@@ -24,6 +24,14 @@ class HanziTree {
         this.mainCharacterEl.addEventListener('click', () => {
             this.loadRandomCharacter();
         });
+
+        // Logo and name click for home
+        const logo = document.querySelector('.logo');
+        if (logo) {
+            logo.addEventListener('click', () => {
+                this.loadCharacter('木');
+            });
+        }
     }
 
     async handleHeaderAction(event) {
@@ -101,6 +109,9 @@ class HanziTree {
         // Render meta information
         this.renderCharacterMeta(data);
         
+        // Render character information
+        this.renderCharacterInfo(data);
+        
         // Render decomposition
         this.renderDecomposition(data);
                 
@@ -119,6 +130,42 @@ class HanziTree {
             .join('');
         
         this.characterMetaEl.classList.add('fade-in');
+    }
+
+    renderCharacterInfo(data) {
+        // Remove existing info section if it exists
+        const existingInfoSection = document.getElementById('character-info');
+        if (existingInfoSection) {
+            existingInfoSection.remove();
+        }
+
+        const infoSection = document.createElement('div');
+        infoSection.id = 'character-info';
+        infoSection.className = 'info-section fade-in';
+        
+        const infoItems = [
+            { label: 'Pronunciation', value: data.pronunciation || 'N/A' },
+            { label: 'Meaning', value: data.meaning || 'N/A' },
+            { label: 'Frequency Score', value: data.frequency_score || 'N/A' },
+            { label: 'Stroke Count', value: data.stroke_count || 'N/A' }
+        ];
+
+        infoSection.innerHTML = `
+            <div class="section-title">Character Information</div>
+            <div class="info-grid">
+                ${infoItems.map(item => `
+                    <div class="info-item">
+                        <div class="info-label">${item.label}</div>
+                        <div class="info-value">${item.value}</div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+
+        // Insert after character display and before decomposition section
+        const characterSection = document.querySelector('.character-section');
+        const decompositionSection = document.querySelector('.decomposition-section');
+        characterSection.insertBefore(infoSection, decompositionSection);
     }
 
     setupComponentClickHandlers() {
@@ -190,12 +237,12 @@ class HanziTree {
             this.setupComponentClickHandlers();
         }
 
-        // Show all components if they exist
-        if (data.all_components) {
+        // Show base components if they exist
+        if (data.lowest_components) {
             try {
                 // Parse the Python list string into an array
                 // Remove the square brackets and split by comma
-                const componentsStr = data.all_components.slice(1, -1); // Remove [ and ]
+                const componentsStr = data.lowest_components
                 const allComponents = componentsStr
                     .split(',')
                     .map(c => c.trim().replace(/['"]/g, '')) // Remove quotes and trim
