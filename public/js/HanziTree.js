@@ -124,7 +124,9 @@ class HanziTree {
             { id: 'grow-right', label: 'Grow right', component: 'component_1', target: 'component_2', structure: 'left-right' },
             { id: 'grow-left', label: 'Grow left', component: 'component_2', target: 'component_1', structure: 'left-right' },
             { id: 'grow-above', label: 'Grow above', component: 'component_2', target: 'component_1', structure: 'top-bottom' },
-            { id: 'grow-below', label: 'Grow below', component: 'component_1', target: 'component_2', structure: 'top-bottom' }
+            { id: 'grow-below', label: 'Grow below', component: 'component_1', target: 'component_2', structure: 'top-bottom' },
+            { id: 'grow-surround', label: 'Surround', component: 'component_1', target: 'component_2', structure: 'surround' },
+            { id: 'grow-overlay', label: 'Overlay', component: 'component_1', target: 'component_2', structure: 'overlay' }
         ];
 
         growDirections.forEach(direction => {

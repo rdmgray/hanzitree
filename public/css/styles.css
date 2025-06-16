@@ -160,13 +160,13 @@ body {
 }
 
 #grow-right {
-    right: 1rem;
+    right:25%;
     top: 50%;
     transform: translateY(-50%);
 }
 
 #grow-left {
-    left: 1rem;
+    left: 25%;
     top: 50%;
     transform: translateY(-50%);
 }
@@ -183,6 +183,16 @@ body {
     transform: translateX(-50%);
 }
 
+#grow-surround {
+    bottom: 1rem;
+    left: 25%;
+}
+
+#grow-overlay {
+    bottom: 1rem;
+    right: 25%;
+}
+
 .grow-results {
     position: absolute;
     background: white;
@@ -193,13 +203,13 @@ body {
 }
 
 #grow-right-results {
-    right: 1rem;
+    right:25%;
     top: 50%;
     transform: translateY(-50%);
 }
 
 #grow-left-results {
-    left: 1rem;
+    left: 25%;
     top: 50%;
     transform: translateY(-50%);
 }
@@ -214,6 +224,16 @@ body {
     bottom: 1rem;
     left: 50%;
     transform: translateX(-50%);
+}
+
+#grow-surround-results {
+    bottom: 1rem;
+    left: 25%;
+}
+
+#grow-overlay-results {
+    bottom: 1rem;
+    right: 25%;
 }
 
 .results-grid {

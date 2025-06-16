@@ -67,27 +67,6 @@ app.get('/api/data/unicode/:unicode', (req, res) => {
     });
 });
 
-// API endpoint to get right components
-app.get('/api/data/right-components/:character', (req, res) => {
-    const character = req.params.character;
-    
-    db.all(`
-        SELECT * 
-        FROM characters 
-        WHERE component_1 = ? 
-        AND structure = 'left-right' 
-        ORDER BY frequency_score DESC 
-        LIMIT 16
-    `, [character], (err, rows) => {
-        if (err) {
-            console.error('Database error:', err);
-            res.status(500).json({ error: 'Database error' });
-            return;
-        }
-        
-        res.json(rows);
-    });
-});
 
 // API endpoint to get components
 app.get('/api/data/components', (req, res) => {
@@ -95,33 +74,62 @@ app.get('/api/data/components', (req, res) => {
     
     console.log('Components request:', { character, component, target, structure });
     
-    // Validate the component and structure parameters to prevent SQL injection
+    // Validate parameters
     const validComponents = ['component_1', 'component_2'];
-    const validStructures = ['left-right', 'top-bottom'];
+    const validStructures = ['left-right', 'top-bottom', 'surround', 'overlay'];
     
     if (!validComponents.includes(component) || !validStructures.includes(structure)) {
         console.log('Invalid parameters:', { component, structure });
-        res.status(400).json({ error: 'Invalid parameters' });
-        return;
+        return res.status(400).json({ error: 'Invalid parameters' });
     }
-    
-    const query = `
-        SELECT * 
-        FROM characters 
-        WHERE ${component} = ? 
-        AND structure = ? 
-        ORDER BY frequency_score DESC 
-        LIMIT 16
-    `;
-    
+
+    let query;
+    let params = [character];
+
+    if (structure === 'surround') {
+        // For surround, match any structure containing 'surround'
+        query = `
+            SELECT DISTINCT c.character, c.${target} as ${target}
+            FROM characters c
+            WHERE c.${component} = ?
+            AND c.structure LIKE '%surround%'
+            ORDER BY c.frequency_score DESC
+            LIMIT 16
+        `;
+    } else if (structure === 'overlay') {
+        // For overlay, match either way around
+        query = `
+            SELECT DISTINCT c.character,
+            case when c.component_1 = ? then c.component_2
+            when c.component_2 = ? then c.component_1 
+            end as ${target} 
+            FROM characters c
+            WHERE (c.component_1 = ? OR c.component_2 = ?)
+            AND c.structure = 'overlaid'
+            ORDER BY c.frequency_score DESC
+            LIMIT 16
+        `;
+        params = [character, character, character, character]
+    } else {
+        // For other structures, match exactly
+        query = `
+            SELECT DISTINCT c.character, c.${target} as ${target}
+            FROM characters c
+            WHERE c.${component} = ?
+            AND c.structure = ?
+            ORDER BY c.frequency_score DESC
+            LIMIT 16
+        `;
+        params.push(structure);
+    }
+
     console.log('Query:', query);
-    console.log('Parameters:', [character, structure]);
-    
-    db.all(query, [character, structure], (err, rows) => {
+    console.log('Parameters:', params);
+
+    db.all(query, params, (err, rows) => {
         if (err) {
             console.error('Database error:', err);
-            res.status(500).json({ error: 'Database error' });
-            return;
+            return res.status(500).json({ error: 'Database error' });
         }
         
         console.log('Results count:', rows.length);

@@ -26,6 +26,7 @@ const DatabaseClient = {
     },
 
     async loadComponents({ character, component, target, structure }) {
+        
         const params = new URLSearchParams({
             character,
             component,
