@@ -106,15 +106,8 @@ class HanziTree {
         this.mainCharacterEl.textContent = data.character;
         this.mainCharacterEl.classList.add('fade-in');
         
-        // Add grow right button if it doesn't exist
-        if (!document.getElementById('grow-right-btn')) {
-            const growRightBtn = document.createElement('button');
-            growRightBtn.id = 'grow-right-btn';
-            growRightBtn.className = 'grow-right-btn';
-            growRightBtn.textContent = 'Grow right';
-            growRightBtn.addEventListener('click', () => this.handleGrowRight(data));
-            this.mainCharacterEl.parentNode.appendChild(growRightBtn);
-        }
+        // Add grow buttons if they don't exist
+        this.setupGrowButtons(data);
         
         // Render character information
         this.renderCharacterInfo(data);
@@ -124,6 +117,117 @@ class HanziTree {
                 
         // Update page title
         document.title = `${data.character} - HanziTree`;
+    }
+
+    setupGrowButtons(data) {
+        const growDirections = [
+            { id: 'grow-right', label: 'Grow right', component: 'component_1', target: 'component_2', structure: 'left-right' },
+            { id: 'grow-left', label: 'Grow left', component: 'component_2', target: 'component_1', structure: 'left-right' },
+            { id: 'grow-above', label: 'Grow above', component: 'component_2', target: 'component_1', structure: 'top-bottom' },
+            { id: 'grow-below', label: 'Grow below', component: 'component_1', target: 'component_2', structure: 'top-bottom' }
+        ];
+
+        growDirections.forEach(direction => {
+            if (!document.getElementById(direction.id)) {
+                const button = document.createElement('button');
+                button.id = direction.id;
+                button.className = 'grow-btn';
+                button.textContent = direction.label;
+                button.dataset.direction = JSON.stringify(direction);
+                button.addEventListener('click', () => this.handleGrow(direction, data));
+                this.mainCharacterEl.parentNode.appendChild(button);
+            }
+        });
+    }
+
+    async handleGrow(direction, data) {
+        try {
+            this.showLoading(true);
+            
+            const currentChar = this.currentCharacter.character;
+            console.log('Handling grow:', { direction, character: currentChar });
+            
+            // Query database for components
+            const results = await DatabaseClient.loadComponents({
+                character: currentChar,
+                component: direction.component,
+                target: direction.target,
+                structure: direction.structure
+            });
+
+            console.log('Got results:', results);
+            
+            // Replace button with results
+            this.displayGrowResults(results, direction);
+            
+        } catch (error) {
+            console.error('Error loading components:', error);
+            this.showError('Failed to load components');
+        } finally {
+            this.showLoading(false);
+        }
+    }
+
+    displayGrowResults(results, direction) {
+        const growBtn = document.getElementById(direction.id);
+        if (!growBtn) return;
+
+        // Remove any existing result containers
+        document.querySelectorAll('.grow-results').forEach(container => {
+            container.remove();
+        });
+
+        const resultsContainer = document.createElement('div');
+        resultsContainer.className = 'grow-results';
+        resultsContainer.id = `${direction.id}-results`;
+        
+        // Create grid of results
+        resultsContainer.innerHTML = `
+            <div class="results-grid">
+                ${results.map(result => `
+                    <div class="result-item">
+                        ${result[direction.target]}
+                    </div>
+                `).join('')}
+            </div>
+            <button class="back-btn">Back</button>
+        `;
+
+        // Add click handlers for results
+        const resultItems = resultsContainer.querySelectorAll('.result-item');
+        resultItems.forEach((item, index) => {
+            item.addEventListener('click', () => {
+                const result = results[index];
+                if (result && result.character) {
+                    // Remove all result containers before loading new character
+                    document.querySelectorAll('.grow-results').forEach(container => {
+                        container.remove();
+                    });
+                    this.loadCharacter(result.character);
+                }
+            });
+        });
+
+        // Add click handler for back button
+        resultsContainer.querySelector('.back-btn').addEventListener('click', () => {
+            this.restoreGrowButton(direction.id);
+        });
+
+        // Replace button with results
+        growBtn.replaceWith(resultsContainer);
+    }
+
+    restoreGrowButton(buttonId) {
+        const resultsContainer = document.getElementById(`${buttonId}-results`);
+        if (!resultsContainer) return;
+
+        // Remove all result containers
+        document.querySelectorAll('.grow-results').forEach(container => {
+            container.remove();
+        });
+
+        // Re-render the main character view
+        this.renderCharacter(this.currentCharacter);
     }
 
     renderCharacterInfo(data) {
@@ -263,77 +367,6 @@ class HanziTree {
                 console.error('Error parsing all_components:', error);
             }
         }
-    }
-
-    async handleGrowRight(data) {
-        try {
-            this.showLoading(true);
-            
-            // Query database for right components
-            const results = await DatabaseClient.loadRightComponents(data.character);
-
-            // Replace button with results
-            this.displayGrowRightResults(results);
-            
-        } catch (error) {
-            console.error('Error loading right components:', error);
-            this.showError('Failed to load right components');
-        } finally {
-            this.showLoading(false);
-        }
-    }
-
-    displayGrowRightResults(results) {
-        const growRightBtn = document.getElementById('grow-right-btn');
-        if (!growRightBtn) return;
-
-        const resultsContainer = document.createElement('div');
-        resultsContainer.className = 'grow-right-results';
-        
-        // Create grid of results
-        resultsContainer.innerHTML = `
-            <div class="results-grid">
-                ${results.map(result => `
-                    <div class="result-item">
-                        ${result.component_2}
-                    </div>
-                `).join('')}
-            </div>
-            <button class="back-btn">Back</button>
-        `;
-
-        // Add click handlers for results
-        const resultItems = resultsContainer.querySelectorAll('.result-item');
-        resultItems.forEach((item, index) => {
-            item.addEventListener('click', () => {
-                const result = results[index];
-                if (result && result.character) {
-                    this.loadCharacter(result.character);
-                    this.restoreGrowRightButton();
-                }
-            });
-        });
-
-        // Add click handler for back button
-        resultsContainer.querySelector('.back-btn').addEventListener('click', () => {
-            this.restoreGrowRightButton();
-        });
-
-        // Replace button with results
-        growRightBtn.replaceWith(resultsContainer);
-    }
-
-    restoreGrowRightButton() {
-        const resultsContainer = document.querySelector('.grow-right-results');
-        if (!resultsContainer) return;
-
-        const growRightBtn = document.createElement('button');
-        growRightBtn.id = 'grow-right-btn';
-        growRightBtn.className = 'grow-right-btn';
-        growRightBtn.textContent = 'Grow right';
-        growRightBtn.addEventListener('click', () => this.handleGrowRight(this.currentCharacter));
-
-        resultsContainer.replaceWith(growRightBtn);
     }
 }
 

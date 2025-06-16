@@ -25,10 +25,16 @@ const DatabaseClient = {
         return response.json();
     },
 
-    async loadRightComponents(character) {
-        const response = await fetch(`/api/data/right-components/${encodeURIComponent(character)}`);
+    async loadComponents({ character, component, target, structure }) {
+        const params = new URLSearchParams({
+            character,
+            component,
+            target,
+            structure
+        });
+        const response = await fetch(`/api/data/components?${params.toString()}`);
         if (!response.ok) {
-            throw new Error('Failed to load right components');
+            throw new Error('Failed to load components');
         }
         return response.json();
     }

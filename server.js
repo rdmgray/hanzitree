@@ -89,6 +89,46 @@ app.get('/api/data/right-components/:character', (req, res) => {
     });
 });
 
+// API endpoint to get components
+app.get('/api/data/components', (req, res) => {
+    const { character, component, target, structure } = req.query;
+    
+    console.log('Components request:', { character, component, target, structure });
+    
+    // Validate the component and structure parameters to prevent SQL injection
+    const validComponents = ['component_1', 'component_2'];
+    const validStructures = ['left-right', 'top-bottom'];
+    
+    if (!validComponents.includes(component) || !validStructures.includes(structure)) {
+        console.log('Invalid parameters:', { component, structure });
+        res.status(400).json({ error: 'Invalid parameters' });
+        return;
+    }
+    
+    const query = `
+        SELECT * 
+        FROM characters 
+        WHERE ${component} = ? 
+        AND structure = ? 
+        ORDER BY frequency_score DESC 
+        LIMIT 16
+    `;
+    
+    console.log('Query:', query);
+    console.log('Parameters:', [character, structure]);
+    
+    db.all(query, [character, structure], (err, rows) => {
+        if (err) {
+            console.error('Database error:', err);
+            res.status(500).json({ error: 'Database error' });
+            return;
+        }
+        
+        console.log('Results count:', rows.length);
+        res.json(rows);
+    });
+});
+
 // Close database connection on exit
 process.on('SIGINT', () => {
   db.close((err) => {
