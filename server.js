@@ -47,6 +47,17 @@ app.get('/api/data/character/:character', (req, res) => {
   });
 });
 
+// API endpoint to get top characters
+app.get('/api/data/top-characters', (req, res) => {
+  db.all('SELECT * FROM characters where good_start', (err, results) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    res.json(results);
+  });
+});
+
 // API endpoint to get character by unicode
 app.get('/api/data/unicode/:unicode', (req, res) => {
     const unicode = req.params.unicode;
