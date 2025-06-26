@@ -60,17 +60,20 @@ class HanziTree {
     async loadCharacter(character) {
         try {
             this.showLoading(true);
-            
-            const data = await DatabaseClient.loadCharacter(character);
+            // Defensive: decode in case character is URL-encoded
+            const decodedChar = decodeURIComponent(character);
+            const data = await DatabaseClient.loadCharacter(decodedChar);
+            if (!data || !data.character) {
+                this.showError(`Character not found: ${decodedChar}`);
+                return;
+            }
             this.currentCharacter = data;
             this.renderCharacter(data);
-            
             // Update URL without page reload
             if (history.pushState) {
                 const newUrl = `${window.location.pathname}?unicode=${encodeURIComponent(data.unicode)}`;
                 history.pushState({ unicode: data.unicode }, '', newUrl);
             }
-            
         } catch (error) {
             console.error('Error loading character:', error);
             this.showError('Failed to load character data');
@@ -375,16 +378,13 @@ class HanziTree {
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     const app = new HanziTree();
-    
     // Handle browser navigation
     window.addEventListener('popstate', (event) => {
         app.handlePopState(event);
     });
-    
-    // Check URL for initial unicode or character
+    // Check URL for initial unicode
     const urlParams = new URLSearchParams(window.location.search);
     const unicodeParam = urlParams.get('unicode');
-    const characterParam = urlParams.get('character');
     if (unicodeParam) {
         DatabaseClient.loadCharacterByUnicode(unicodeParam)
             .then(data => {
@@ -395,8 +395,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error('Error loading initial character:', error);
                 app.showError('Failed to load character data');
             });
-    } else if (characterParam) {
-        app.loadCharacter(characterParam);
     }
 });
 

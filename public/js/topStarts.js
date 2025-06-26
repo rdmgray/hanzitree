@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             `;
             div.style.cursor = 'pointer';
             div.onclick = () => {
-                window.location.href = `index.html?character=${encodeURIComponent(item.character)}`;
+                window.location.href = `index.html?unicode=${encodeURIComponent(item.unicode)}`;
             };
             grid.appendChild(div);
         });
