@@ -38,6 +38,14 @@ const DatabaseClient = {
             throw new Error('Failed to load components');
         }
         return response.json();
+    },
+
+    async loadTopStartCharacters() {
+        const response = await fetch('/api/data/top-characters');
+        if (!response.ok) {
+            throw new Error('Failed to load top start characters');
+        }
+        return response.json();
     }
 
 };

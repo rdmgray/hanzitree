@@ -7,20 +7,7 @@
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-    <div class="header">
-        <div class="header-content">
-            <div class="logo">
-                <div class="logo-icon">木</div>
-                <h1>HanziTree</h1>
-            </div>
-            <div class="header-buttons">
-                <button class="header-btn" data-action="search">Search</button>
-                <button class="header-btn" data-action="random">Random</button>
-                <button class="header-btn" data-action="top-starts">Top starts</button>
-                <button class="header-btn" data-action="settings">Settings</button>
-            </div>
-        </div>
-    </div>
+    <div id="toolbar"></div>
 
     <div class="main-container">
         <div class="character-section">
@@ -40,6 +27,7 @@
         <div class="loading-text">Loading...</div>
     </div>
 
+    <script src="js/toolbar.js"></script>
     <script src="js/DatabaseClient.js"></script>
     <script src="js/HanziTree.js"></script>
 </body>

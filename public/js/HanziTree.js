@@ -381,9 +381,10 @@ document.addEventListener('DOMContentLoaded', () => {
         app.handlePopState(event);
     });
     
-    // Check URL for initial unicode
+    // Check URL for initial unicode or character
     const urlParams = new URLSearchParams(window.location.search);
     const unicodeParam = urlParams.get('unicode');
+    const characterParam = urlParams.get('character');
     if (unicodeParam) {
         DatabaseClient.loadCharacterByUnicode(unicodeParam)
             .then(data => {
@@ -394,6 +395,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error('Error loading initial character:', error);
                 app.showError('Failed to load character data');
             });
+    } else if (characterParam) {
+        app.loadCharacter(characterParam);
     }
 });
 
