@@ -11,7 +11,25 @@ class HanziTree {
 
     async init() {
         this.setupEventListeners();
-        await this.loadCharacter('木'); // Load default character
+        
+        // Check URL for initial character before loading default
+        const urlParams = new URLSearchParams(window.location.search);
+        const unicodeParam = urlParams.get('unicode');
+        
+        if (unicodeParam) {
+            try {
+                const data = await DatabaseClient.loadCharacterByUnicode(unicodeParam);
+                this.currentCharacter = data;
+                this.renderCharacter(data);
+            } catch (error) {
+                console.error('Error loading character from URL:', error);
+                // Fall back to default character if URL character fails
+                await this.loadCharacter('木');
+            }
+        } else {
+            // Load default character only if no URL parameter
+            await this.loadCharacter('木');
+        }
     }
 
     setupEventListeners() {
@@ -382,20 +400,6 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('popstate', (event) => {
         app.handlePopState(event);
     });
-    // Check URL for initial unicode
-    const urlParams = new URLSearchParams(window.location.search);
-    const unicodeParam = urlParams.get('unicode');
-    if (unicodeParam) {
-        DatabaseClient.loadCharacterByUnicode(unicodeParam)
-            .then(data => {
-                app.currentCharacter = data;
-                app.renderCharacter(data);
-            })
-            .catch(error => {
-                console.error('Error loading initial character:', error);
-                app.showError('Failed to load character data');
-            });
-    }
 });
 
 // Remove fade-in classes after animation
