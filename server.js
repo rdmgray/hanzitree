@@ -222,6 +222,74 @@ app.get('/api/data/components', (req, res) => {
     });
 });
 
+// API endpoint to check component availability (for button state)
+app.get('/api/data/components/available', (req, res) => {
+    const { character } = req.query;
+    
+    // Validate parameters
+    if (!character || character.length !== 1) {
+        return res.status(400).json({ error: 'Invalid character parameter' });
+    }
+
+    // Define the same grow directions as frontend
+    const growDirections = [
+        { id: 'grow-right', component: 'component_1', target: 'component_2', structure: 'left-right' },
+        { id: 'grow-left', component: 'component_2', target: 'component_1', structure: 'left-right' },
+        { id: 'grow-above', component: 'component_2', target: 'component_1', structure: 'top-bottom' },
+        { id: 'grow-below', component: 'component_1', target: 'component_2', structure: 'top-bottom' },
+        { id: 'grow-surround', component: 'component_1', target: 'component_2', structure: 'surround' },
+        { id: 'grow-overlay', component: 'component_1', target: 'component_2', structure: 'overlay' }
+    ];
+
+    const availabilityResults = {};
+    let completedChecks = 0;
+
+    growDirections.forEach(direction => {
+        let query;
+        let params = [character];
+
+        if (direction.structure === 'surround') {
+            query = `
+                SELECT 1 FROM characters c
+                WHERE c.${direction.component} = ?
+                AND c.structure LIKE '%surround%'
+                LIMIT 1
+            `;
+        } else if (direction.structure === 'overlay') {
+            query = `
+                SELECT 1 FROM characters c
+                WHERE (c.component_1 = ? OR c.component_2 = ?)
+                AND c.structure = 'overlaid'
+                LIMIT 1
+            `;
+            params = [character, character];
+        } else {
+            query = `
+                SELECT 1 FROM characters c
+                WHERE c.${direction.component} = ?
+                AND c.structure = ?
+                LIMIT 1
+            `;
+            params.push(direction.structure);
+        }
+
+        logQuery(query, params);
+        db.get(query, params, (err, row) => {
+            if (err) {
+                console.error('Database error checking availability:', err);
+                availabilityResults[direction.id] = false;
+            } else {
+                availabilityResults[direction.id] = !!row;
+            }
+
+            completedChecks++;
+            if (completedChecks === growDirections.length) {
+                res.json(availabilityResults);
+            }
+        });
+    });
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);

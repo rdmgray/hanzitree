@@ -57,3 +57,6 @@ temp/
 
 # Optional npm cache directory
 .npm
+
+# Claude Code session data
+.claude/

@@ -12,22 +12,26 @@ class HanziTree {
     async init() {
         this.setupEventListeners();
         
-        // Check URL for initial character before loading default
+        // Check URL for initial character or action before loading default
         const urlParams = new URLSearchParams(window.location.search);
         const unicodeParam = urlParams.get('unicode');
+        const hashAction = window.location.hash.slice(1); // Remove # character
         
         if (unicodeParam) {
             try {
                 const data = await DatabaseClient.loadCharacterByUnicode(unicodeParam);
                 this.currentCharacter = data;
-                this.renderCharacter(data);
+                await this.renderCharacter(data);
             } catch (error) {
                 console.error('Error loading character from URL:', error);
                 // Fall back to default character if URL character fails
                 await this.loadCharacter('木');
             }
+        } else if (hashAction === 'random') {
+            // Handle #random hash from toolbar navigation
+            await this.loadRandomCharacter();
         } else {
-            // Load default character only if no URL parameter
+            // Load default character only if no URL parameter or action
             await this.loadCharacter('木');
         }
     }
@@ -86,7 +90,7 @@ class HanziTree {
                 return;
             }
             this.currentCharacter = data;
-            this.renderCharacter(data);
+            await this.renderCharacter(data);
             // Update URL without page reload
             if (history.pushState) {
                 const newUrl = `${window.location.pathname}?unicode=${encodeURIComponent(data.unicode)}`;
@@ -106,7 +110,7 @@ class HanziTree {
             
             const data = await DatabaseClient.loadRandomCharacter();
             this.currentCharacter = data;
-            this.renderCharacter(data);
+            await this.renderCharacter(data);
             
             // Update URL without page reload
             if (history.pushState) {
@@ -122,13 +126,13 @@ class HanziTree {
         }
     }
 
-    renderCharacter(data) {
+    async renderCharacter(data) {
         // Render main character
         this.mainCharacterEl.textContent = data.character;
         this.mainCharacterEl.classList.add('fade-in');
         
         // Add grow buttons if they don't exist
-        this.setupGrowButtons(data);
+        await this.setupGrowButtons(data);
         
         // Render character information
         this.renderCharacterInfo(data);
@@ -140,7 +144,7 @@ class HanziTree {
         document.title = `${data.character} - HanziTree`;
     }
 
-    setupGrowButtons(data) {
+    async setupGrowButtons(data) {
         const growDirections = [
             { id: 'grow-right', label: 'Grow right', component: 'component_1', target: 'component_2', structure: 'left-right' },
             { id: 'grow-left', label: 'Grow left', component: 'component_2', target: 'component_1', structure: 'left-right' },
@@ -150,15 +154,35 @@ class HanziTree {
             { id: 'grow-overlay', label: 'Overlay', component: 'component_1', target: 'component_2', structure: 'overlay' }
         ];
 
+        // Check availability for all directions
+        let availability = {};
+        try {
+            availability = await DatabaseClient.checkComponentAvailability(data.character);
+        } catch (error) {
+            console.error('Failed to check component availability:', error);
+            // Default to all available if check fails
+            availability = {};
+            growDirections.forEach(dir => availability[dir.id] = true);
+        }
+
         growDirections.forEach(direction => {
-            if (!document.getElementById(direction.id)) {
-                const button = document.createElement('button');
+            let button = document.getElementById(direction.id);
+            if (!button) {
+                button = document.createElement('button');
                 button.id = direction.id;
-                button.className = 'grow-btn';
                 button.textContent = direction.label;
                 button.dataset.direction = JSON.stringify(direction);
-                button.addEventListener('click', () => this.handleGrow(direction, data));
                 this.mainCharacterEl.parentNode.appendChild(button);
+            }
+
+            const isAvailable = availability[direction.id];
+            button.className = isAvailable ? 'grow-btn' : 'grow-btn grow-btn-disabled';
+            button.disabled = !isAvailable;
+            
+            if (isAvailable) {
+                button.onclick = () => this.handleGrow(direction, data);
+            } else {
+                button.onclick = null;
             }
         });
     }
@@ -232,15 +256,15 @@ class HanziTree {
         });
 
         // Add click handler for back button
-        resultsContainer.querySelector('.back-btn').addEventListener('click', () => {
-            this.restoreGrowButton(direction.id);
+        resultsContainer.querySelector('.back-btn').addEventListener('click', async () => {
+            await this.restoreGrowButton(direction.id);
         });
 
         // Replace button with results
         growBtn.replaceWith(resultsContainer);
     }
 
-    restoreGrowButton(buttonId) {
+    async restoreGrowButton(buttonId) {
         const resultsContainer = document.getElementById(`${buttonId}-results`);
         if (!resultsContainer) return;
 
@@ -250,7 +274,7 @@ class HanziTree {
         });
 
         // Re-render the main character view
-        this.renderCharacter(this.currentCharacter);
+        await this.renderCharacter(this.currentCharacter);
     }
 
     renderCharacterInfo(data) {
@@ -318,18 +342,16 @@ class HanziTree {
     }
 
     // Handle browser back/forward
-    handlePopState(event) {
+    async handlePopState(event) {
         if (event.state && event.state.unicode) {
-            // Find the character for this unicode value
-            DatabaseClient.loadCharacterByUnicode(event.state.unicode)
-                .then(data => {
-                    this.currentCharacter = data;
-                    this.renderCharacter(data);
-                })
-                .catch(error => {
-                    console.error('Error loading character by unicode:', error);
-                    this.showError('Failed to load character data');
-                });
+            try {
+                const data = await DatabaseClient.loadCharacterByUnicode(event.state.unicode);
+                this.currentCharacter = data;
+                await this.renderCharacter(data);
+            } catch (error) {
+                console.error('Error loading character by unicode:', error);
+                this.showError('Failed to load character data');
+            }
         }
     }
 

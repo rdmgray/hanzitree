@@ -159,6 +159,29 @@ body {
     box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
 }
 
+.grow-btn-disabled {
+    background: #9ca3af !important;
+    color: #6b7280 !important;
+    cursor: not-allowed !important;
+    box-shadow: 0 2px 4px rgba(156, 163, 175, 0.1) !important;
+    opacity: 0.6;
+}
+
+.grow-btn-disabled:hover {
+    background: #9ca3af !important;
+    transform: none !important;
+    box-shadow: 0 2px 4px rgba(156, 163, 175, 0.1) !important;
+}
+
+.grow-btn-disabled:disabled:hover {
+    transform: none !important;
+}
+
+.grow-btn-disabled:active {
+    transform: none !important;
+    box-shadow: 0 2px 4px rgba(156, 163, 175, 0.1) !important;
+}
+
 #grow-right {
     right:25%;
     top: 50%;
