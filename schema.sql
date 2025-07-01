@@ -9,4 +9,5 @@ CREATE TABLE characters (
     component_2 TEXT,
     component_3 TEXT,
     all_components TEXT,     -- Will store list
+    good_start BOOLEAN,
 ); 

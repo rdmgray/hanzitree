@@ -46,6 +46,15 @@ const DatabaseClient = {
             throw new Error('Failed to load top start characters');
         }
         return response.json();
+    },
+
+    async checkComponentAvailability(character) {
+        const params = new URLSearchParams({ character });
+        const response = await fetch(`/api/data/components/available?${params.toString()}`);
+        if (!response.ok) {
+            throw new Error('Failed to check component availability');
+        }
+        return response.json();
     }
 
 };

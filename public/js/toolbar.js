@@ -22,12 +22,19 @@ if (toolbarContainer) {
     toolbarContainer.innerHTML = toolbarHTML;
 }
 
-// Optional: Add navigation logic for Search/Random buttons
+// Optional: Add navigation logic for buttons that need fallback behavior
 if (toolbarContainer) {
-    toolbarContainer.querySelector('[data-action="search"]').onclick = () => {
-        window.location.href = 'index.html';
-    };
-    toolbarContainer.querySelector('[data-action="random"]').onclick = () => {
-        window.location.href = 'index.html#random';
-    };
+    const searchBtn = toolbarContainer.querySelector('[data-action="search"]');
+    if (searchBtn) {
+        searchBtn.onclick = () => {
+            window.location.href = 'index.html';
+        };
+    }
+    
+    const randomBtn = toolbarContainer.querySelector('[data-action="random"]');
+    if (randomBtn) {
+        randomBtn.onclick = () => {
+            window.location.href = 'index.html#random';
+        };
+    }
 } 
