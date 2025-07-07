@@ -37,43 +37,12 @@ class HanziTree {
     }
 
     setupEventListeners() {
-        // Header button functionality
-        document.querySelectorAll('.header-btn').forEach(btn => {
-            btn.addEventListener('click', this.handleHeaderAction.bind(this));
-        });
-
         // Main character click for random
         this.mainCharacterEl.addEventListener('click', () => {
             this.loadRandomCharacter();
         });
-
-        // Logo and name click for home
-        const logo = document.querySelector('.logo');
-        if (logo) {
-            logo.addEventListener('click', () => {
-                this.loadCharacter('木');
-            });
-        }
     }
 
-    async handleHeaderAction(event) {
-        const action = event.target.dataset.action;
-        
-        switch (action) {
-            case 'search':
-                this.showSearchDialog();
-                break;
-            case 'random':
-                await this.loadRandomCharacter();
-                break;
-            case 'favorites':
-                this.showFavorites();
-                break;
-            case 'settings':
-                this.showSettings();
-                break;
-        }
-    }
 
     showLoading(show = true) {
         this.loadingOverlay.style.display = show ? 'flex' : 'none';
@@ -121,6 +90,32 @@ class HanziTree {
         } catch (error) {
             console.error('Error loading random character:', error);
             this.showError('Failed to load random character');
+        } finally {
+            this.showLoading(false);
+        }
+    }
+
+    async loadCharacterByUnicode(unicode) {
+        try {
+            this.showLoading(true);
+            
+            const data = await DatabaseClient.loadCharacterByUnicode(unicode);
+            if (!data || !data.character) {
+                this.showError(`Character not found: ${unicode}`);
+                return;
+            }
+            this.currentCharacter = data;
+            await this.renderCharacter(data);
+            
+            // Update URL without page reload
+            if (history.pushState) {
+                const newUrl = `${window.location.pathname}?unicode=${encodeURIComponent(data.unicode)}`;
+                history.pushState({ unicode: data.unicode }, '', newUrl);
+            }
+            
+        } catch (error) {
+            console.error('Error loading character by unicode:', error);
+            this.showError('Failed to load character');
         } finally {
             this.showLoading(false);
         }
@@ -326,16 +321,16 @@ class HanziTree {
     }
 
     showSearchDialog() {
-        alert('Search feature coming soon!');
+        // Delegate to toolbar handler
+        if (window.Toolbar) {
+            window.Toolbar.handleSearch();
+        } else if (window.SearchModal) {
+            window.SearchModal.open();
+        } else {
+            alert('Search feature coming soon!');
+        }
     }
 
-    showFavorites() {
-        alert('Favorites feature coming soon!');
-    }
-
-    showSettings() {
-        alert('Settings feature coming soon!');
-    }
 
     showError(message) {
         alert(`Error: ${message}`);
@@ -418,6 +413,8 @@ class HanziTree {
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     const app = new HanziTree();
+    // Make app globally available
+    window.HanziTree = app;
     // Handle browser navigation
     window.addEventListener('popstate', (event) => {
         app.handlePopState(event);

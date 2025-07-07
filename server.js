@@ -222,6 +222,59 @@ app.get('/api/data/components', (req, res) => {
     });
 });
 
+// API endpoint for search functionality
+app.get('/api/data/search', (req, res) => {
+    const { q, limit = 10 } = req.query;
+    
+    if (!q || q.trim().length === 0) {
+        return res.status(400).json({ error: 'Search query is required' });
+    }
+    
+    const searchTerm = q.trim().toLowerCase();
+    const searchLimit = Math.min(parseInt(limit) || 10, 50); // Max 50 results
+    
+    // Search by exact character match, pinyin (pronunciation), or meaning
+    // Using COLLATE NOCASE for case-insensitive search
+    const query = `
+        SELECT unicode, character, pronunciation, meaning, frequency_score, stroke_count
+        FROM characters 
+        WHERE character = ? 
+           OR LOWER(pronunciation) LIKE ? 
+           OR LOWER(meaning) LIKE ?
+        ORDER BY 
+            CASE 
+                WHEN character = ? THEN 0
+                WHEN LOWER(pronunciation) = ? THEN 1
+                WHEN LOWER(pronunciation) LIKE ? THEN 2  
+                WHEN LOWER(meaning) LIKE ? THEN 3
+                ELSE 4
+            END ASC,
+            COALESCE(frequency_score, 9999) ASC,
+            stroke_count ASC
+        LIMIT ?
+    `;
+    
+    const exactMatch = searchTerm;
+    const likePattern = `%${searchTerm}%`;
+    const params = [
+        q.trim(), // Keep original case for exact character match
+        likePattern, likePattern, // pronunciation and meaning searches
+        q.trim(), // exact character match for ordering
+        exactMatch, likePattern, likePattern, // ordering params
+        searchLimit
+    ];
+    
+    logQuery(query, params);
+    db.all(query, params, (err, results) => {
+        if (err) {
+            console.error('Search database error:', err);
+            return res.status(500).json({ error: 'Database error' });
+        }
+        
+        res.json(results);
+    });
+});
+
 // API endpoint to check component availability (for button state)
 app.get('/api/data/components/available', (req, res) => {
     const { character } = req.query;

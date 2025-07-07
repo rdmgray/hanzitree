@@ -55,6 +55,15 @@ const DatabaseClient = {
             throw new Error('Failed to check component availability');
         }
         return response.json();
+    },
+
+    async searchCharacters(query, limit = 10) {
+        const params = new URLSearchParams({ q: query, limit });
+        const response = await fetch(`/api/data/search?${params.toString()}`);
+        if (!response.ok) {
+            throw new Error('Failed to search characters');
+        }
+        return response.json();
     }
 
 };
